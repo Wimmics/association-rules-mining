@@ -1,0 +1,1 @@
+[{"antecedents":["named entity 'tetraploid'"],"consequents":["named entity 'diploid'"],"confidence":1.0,"interestingness":0.3333331536,"support":0.0019428254,"isSymmetric":true},{"antecedents":["named entity 'diploid'"],"consequents":["named entity 'tetraploid'"],"confidence":0.3333333333,"interestingness":0.3333331536,"support":0.0019428254,"isSymmetric":true}]
