@@ -6,7 +6,7 @@
 },
 "endpoints": {
     "covid" : "http://covidontheweb.inria.fr/sparql",
-    "hal": "<https://data.archives-ouvertes.fr/sparql",
+    "hal": "https://data.archives-ouvertes.fr/sparql",
     "issa": "http://erebe-vm3.i3s.unice.fr/sparql"
 }
 }
