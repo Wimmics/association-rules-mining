@@ -70,7 +70,7 @@ def delete_Label_number(label):
     return delete
 
 
-def transform_data(df):
+def transform_data(df, min_occur):
     """
 
     Pre-processing data :
@@ -99,7 +99,7 @@ def transform_data(df):
                                            apply(lambda x: delete_Label_number(x)) == True].index)
     df_article_sort = df_article_sort.loc[df_article_sort['label'].
         isin(list(df_article_sort['label'].value_counts(sort=True)
-                  [df_article_sort['label'].value_counts(sort=True) > 4].index))]
+                  [df_article_sort['label'].value_counts(sort=True) > min_occur].index))]
     df_article_sort = df_article_sort.loc[~df_article_sort['label'].
         isin(list(df_article_sort['label'].value_counts(sort=True).head(15).index))]
 
@@ -433,8 +433,9 @@ def remove_identical_rules(rules) :
     index = []
     for x in rules.itertuples() :
         for y in rules.itertuples() :
-            if((x.Index not in index) & (x.Index!=y.Index) & (x.antecedents == y.antecedents) & (x.consequents == y.consequents)) :
-                if(x.confidence>=y.confidence) :
+            print(x, y)
+            if((x.Index not in index) and (x.Index != y.Index) and (x.antecedents == y.antecedents) and (x.consequents == y.consequents)) :
+                if(x.confidence >= y.confidence) :
                     index.append(y.Index)
                 else:
                     index.append(x.Index)
