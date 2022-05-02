@@ -57,4 +57,4 @@ Mining association rules from the CovidOnTheWeb dataset:
 
 When using this algorithm in a publication, please cite this paper:
 
-Lucie Cadorel, Andrea G. B. Tettamanzi. Mining RDF Data of COVID-19 Scientific Literature for Interesting Association Rules. WI-IAT'20 - IEEE/WIC/ACM International Joint Conference on Web Intelligence and Intelligent Agent Technology, Dec 2020, Melbourne, Australia. ⟨hal-03084029⟩
+Lucie Cadorel, Andrea G. B. Tettamanzi. Mining RDF Data of COVID-19 Scientific Literature for Interesting Association Rules. WI-IAT'20 - IEEE/WIC/ACM International Joint Conference on Web Intelligence and Intelligent Agent Technology, Dec 2020, Melbourne, Australia. [hal-03084029](https://hal.inria.fr/hal-03084029)
