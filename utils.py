@@ -8,6 +8,7 @@ import SPARQLWrapper
 import json
 from SPARQLWrapper import SPARQLWrapper, JSON
 
+
 import networkx as nx
 # from cdlib import algorithms,viz
 
@@ -69,45 +70,42 @@ def delete_Label_number(label):
     return delete
 
 
-def transform_data(df, article_entity_count_threshold=1, entity_count_threshold=4):
+def transform_data(df, min_occur):
     """
 
     Pre-processing data :
-        Keep articles with more than article_entity_count_threshold named entity (default 1)
+        Keep articles with more than 1 named entity
         Sort data by article
         Labels in lower case
         Remove "," and "."
         Delete Labels containing only numbers
-        Keep Labels occurring more than entity_count_threshold times (default 4)
+        Keep Labels occurring more than 4 times
 
     Parameters :
         df : DataFrame
-            The dataframe to process
-        article_entity_count_threshold: int
-            The minimum
 
     Returns :
         df_article_sort : DataFrame
     """
 
-    url_article = df['article'].value_counts()[df['article'].value_counts() > article_entity_count_threshold].index
+    url_article = df['article'].value_counts()[df['article'].value_counts() > 1].index
     df_article = df.loc[df['article'].isin(url_article)]
     df_article_sort = df_article.sort_values(by=['article'])
 
-    df_article_sort = df_article_sort.astype({"article": str, "label": str})  # , "year": str})
-    # df_article_sort['Label'] = df_article_sort['Label'].apply(lambda x: x.lower())
+    df_article_sort = df_article_sort.astype({"article": str, "label": str})# , "year": str})
+    #df_article_sort['Label'] = df_article_sort['Label'].apply(lambda x: x.lower())
     df_article_sort['label'] = df_article_sort['label'].apply(lambda x: x.replace('.', '').replace(',', ''))
     df_article_sort = df_article_sort.drop(df_article_sort[df_article_sort['label']. \
                                            apply(lambda x: delete_Label_number(x)) == True].index)
     df_article_sort = df_article_sort.loc[df_article_sort['label'].
         isin(list(df_article_sort['label'].value_counts(sort=True)
-                  [df_article_sort['label'].value_counts(sort=True) > entity_count_threshold].index))]
+                  [df_article_sort['label'].value_counts(sort=True) > min_occur].index))]
     df_article_sort = df_article_sort.loc[~df_article_sort['label'].
         isin(list(df_article_sort['label'].value_counts(sort=True).head(15).index))]
 
     df_article_sort["label"] = df_article_sort["label"].astype('category')
     # df_article_sort["year"] = df_article_sort["year"].astype('category')
-    # df_article_sort["body"] = df_article_sort["body"].astype('category')
+    #df_article_sort["body"] = df_article_sort["body"].astype('category')
 
     return df_article_sort
 
@@ -197,13 +195,14 @@ def fp_growth(one_hot, max_len, min_confidence):
     minimum support is computes in order to have at least 5 articles.
 
     """
-    # / one_hot.shape[0]
+# / one_hot.shape[0]
     print(one_hot.shape[0])
     frequent_itemsets_fp = fpgrowth(one_hot, min_support=5 / one_hot.shape[0], max_len=max_len, use_colnames=True)
     regles_fp = association_rules(frequent_itemsets_fp, metric="confidence", min_threshold=min_confidence).sort_values(
         by='lift', ascending=False)
 
     return regles_fp
+
 
 
 def fp_growth_with_clustering(one_hot, group, index, max_len, min_confidence):
@@ -232,11 +231,10 @@ def fp_growth_with_clustering(one_hot, group, index, max_len, min_confidence):
     for i in index:
         one_hot_cluster = one_hot[one_hot.index.isin(list(group[group.index == i]['article']))]
         frequent_itemsets_fp = fpgrowth(one_hot_cluster,
-                                        min_support=5 / one_hot_cluster.shape[0], max_len=max_len, use_colnames=True)
-        if (len(frequent_itemsets_fp) != 0):
+                                        min_support=5/one_hot_cluster.shape[0], max_len=max_len,use_colnames=True)
+        if(len(frequent_itemsets_fp)!=0):
             regles_fp_clustering.append(association_rules(frequent_itemsets_fp, metric="confidence",
-                                                          min_threshold=min_confidence).sort_values(by='lift',
-                                                                                                    ascending=False))
+                                        min_threshold=min_confidence).sort_values(by='lift',ascending=False))
         else:
             regles_fp_clustering.append(pd.DataFrame([]))
     return regles_fp_clustering
@@ -276,12 +274,12 @@ def isSymmetric(rule1, rule2):
     return isSymmetric
 
 
-def findSymmetric(x, rules):
+def findSymmetric(x,rules):
     """
     Find a symmetric of x among the rules
     """
-    for y in rules.itertuples():
-        if (isSymmetric(x, y)):
+    for y in rules.itertuples() :
+        if(isSymmetric(x,y)) :
             x['isSymmetric'] = True
             break
     return x
@@ -295,7 +293,7 @@ def interestingness_measure(regles_fp, one_hot):
     size = one_hot.shape[0]
     regles_fp['interestingness'] = ((regles_fp['support'] ** 2) /
                                     (regles_fp['antecedent support'] * regles_fp['consequent support'])) * (
-                                           1 - (regles_fp['support'] / size))
+                                               1 - (regles_fp['support'] / size))
 
     return regles_fp
 
@@ -430,14 +428,14 @@ def delete_redundant_community(rules_clustering):
     return rules_without_redundant
 
 
-# Remove identical rules with lower confidence
-def remove_identical_rules(rules):
+#Remove identical rules with lower confidence
+def remove_identical_rules(rules) :
     index = []
-    for x in rules.itertuples():
-        for y in rules.itertuples():
-            if ((x.Index not in index) & (x.Index != y.Index) & (x.antecedents == y.antecedents) & (
-                    x.consequents == y.consequents)):
-                if (x.confidence >= y.confidence):
+    for x in rules.itertuples() :
+        for y in rules.itertuples() :
+            print(x, y)
+            if((x.Index not in index) and (x.Index != y.Index) and (x.antecedents == y.antecedents) and (x.consequents == y.consequents)) :
+                if(x.confidence >= y.confidence) :
                     index.append(y.Index)
                 else:
                     index.append(x.Index)
@@ -541,13 +539,12 @@ def fp_growth_with_com_auto(one_hot, group, index, max_len, min_confidence):
     regles_fp_clustering = []
 
     for i in index:
-        one_hot_cluster = one_hot.loc[:, one_hot.columns.isin(list(group[group.index == i]['Labels']))]
+        one_hot_cluster = one_hot.loc[:,one_hot.columns.isin(list(group[group.index == i]['Labels']))]
         frequent_itemsets_fp = fpgrowth(one_hot_cluster,
-                                        min_support=5 / one_hot_cluster.shape[0], max_len=max_len, use_colnames=True)
-        if (len(frequent_itemsets_fp) != 0):
+                                        min_support=5/one_hot_cluster.shape[0], max_len=max_len,use_colnames=True)
+        if(len(frequent_itemsets_fp)!=0):
             regles_fp_clustering.append(association_rules(frequent_itemsets_fp, metric="confidence",
-                                                          min_threshold=min_confidence).sort_values(by='lift',
-                                                                                                    ascending=False))
+                                        min_threshold=min_confidence).sort_values(by='lift',ascending=False))
         else:
             regles_fp_clustering.append(pd.DataFrame([]))
     return regles_fp_clustering
@@ -737,18 +734,9 @@ def dataframe_difference(df1, df2):
     return diff_df.shape[0]
 
 
-def comparison(rules1, rules2):
+def comparison(rules1,rules2) :
     print("Number of rules 1 : " + str(rules1.shape[0]))
     print("Number of rules 2 : " + str(rules2.shape[0]))
-    print("Number of same rows : " + str(dataframe_difference(rules1.loc[:, ['antecedents', 'consequents']],
-                                                              rules2.loc[:, ['antecedents', 'consequents']])))
-    print("Number of same rows among top 10 most interesting rules : " + str(dataframe_difference(
-        rules1.sort_values(by=['confidence', 'interestingness'], ascending=False).loc[:,
-        ['antecedents', 'consequents']].head(10),
-        rules2.sort_values(by=['confidence', 'interestingness'], ascending=False).loc[:,
-        ['antecedents', 'consequents']].head(10))))
-    print("Number of same rows among top 20 most interesting rules : " + str(dataframe_difference(
-        rules1.sort_values(by=['confidence', 'interestingness'], ascending=False).loc[:,
-        ['antecedents', 'consequents']].head(20),
-        rules2.sort_values(by=['confidence', 'interestingness'], ascending=False).loc[:,
-        ['antecedents', 'consequents']].head(20))))
+    print("Number of same rows : " + str(dataframe_difference(rules1.loc[:,['antecedents','consequents']],rules2.loc[:,['antecedents','consequents']])))
+    print("Number of same rows among top 10 most interesting rules : " + str(dataframe_difference(rules1.sort_values(by=['confidence','interestingness'],ascending=False).loc[:,['antecedents','consequents']].head(10),rules2.sort_values(by=['confidence','interestingness'],ascending=False).loc[:,['antecedents','consequents']].head(10))))
+    print("Number of same rows among top 20 most interesting rules : " + str(dataframe_difference(rules1.sort_values(by=['confidence','interestingness'],ascending=False).loc[:,['antecedents','consequents']].head(20),rules2.sort_values(by=['confidence','interestingness'],ascending=False).loc[:,['antecedents','consequents']].head(20))))

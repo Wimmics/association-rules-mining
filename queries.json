@@ -2,11 +2,11 @@
     "issa": { 
         "agrovoc": "PREFIX oa: <http://www.w3.org/ns/oa#>\n prefix skosxl: <http://www.w3.org/2008/05/skos-xl#> \n SELECT distinct ?article ?label \n from <http://agrovoc.fao.org/graph> \n from <http://data-issa.cirad.fr/graph/thematic-descriptors> from <http://data-issa.cirad.fr/graph/annif-descriptors> \n WHERE { \n ?s oa:hasTarget ?article ; oa:hasBody ?desc . \n ?desc skosxl:prefLabel [ skosxl:literalForm ?label ] . \n filter ( langMatches( lang(?label), '%s')) \n } limit 10000 offset %s"
     },
-    "covid": " PREFIX wdt: <http://www.wikidata.org/prop/direct/> \n prefix schema: <http://schema.org/>\n prefix oa:     <http://www.w3.org/ns/oa#> \n prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> \n prefix dct:    <http://purl.org/dc/terms/> \n SELECT distinct ?article ?label ?body (YEAR(?date) as ?year) \n FROM <http://ns.inria.fr/covid19/graph/entityfishing> \n FROM named <http://ns.inria.fr/covid19/graph/wikidata-named-entities-full> \n FROM <http://ns.inria.fr/covid19/graph/articles> \n WHERE { \n ?x schema:about ?article; oa:hasBody ?body. \n GRAPH <http://ns.inria.fr/covid19/graph/wikidata-named-entities-full>{ \n ?body rdfs:label ?label. \n } \n ?article dct:issued ?date; dct:abstract [ rdf:value ?abs ]. \n FILTER(YEAR(?date) >= %s && YEAR(?date) <= %s) \n } \n LIMIT 10000 \n OFFSET  %s"
+    "covid": " PREFIX wdt: <http://www.wikidata.org/prop/direct/> \n prefix schema: <http://schema.org/>\n prefix oa:     <http://www.w3.org/ns/oa#> \n prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> \n prefix dct:    <http://purl.org/dc/terms/> \n SELECT distinct ?article ?label \n FROM <http://ns.inria.fr/covid19/graph/entityfishing> \n FROM named <http://ns.inria.fr/covid19/graph/wikidata-named-entities-full> \n FROM <http://ns.inria.fr/covid19/graph/articles> \n WHERE { \n ?x schema:about ?article; oa:hasBody ?body. \n GRAPH <http://ns.inria.fr/covid19/graph/wikidata-named-entities-full>{ \n ?body rdfs:label ?label. \n } \n ?article dct:issued ?date; dct:abstract [ rdf:value ?abs ]. \n FILTER(YEAR(?date) >= 1990 && YEAR(?date) <= 2020) \n } \n LIMIT 10000 \n OFFSET  %s"
 },
 "endpoints": {
     "covid" : "http://covidontheweb.inria.fr/sparql",
-    "hal": "https://data.archives-ouvertes.fr/sparql",
+    "hal": "<https://data.archives-ouvertes.fr/sparql",
     "issa": "http://erebe-vm3.i3s.unice.fr/sparql"
 }
 }
