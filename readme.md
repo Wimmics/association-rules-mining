@@ -53,6 +53,10 @@ Mining association rules from the CovidOnTheWeb dataset:
 
 ./rules_generator.py --endpoint 'covid' --graph 'agrovoc' --lang 'en' 
 
+## License
+
+See the [LICENSE file](LICENSE).
+
 ## Cite this work
 
 When using this algorithm in a publication, please cite this paper:
