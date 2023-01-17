@@ -44,10 +44,10 @@ from os.path import exists
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--endpoint', help='The endpoint from where retrieve the data (identified through codes: issa, covid).', required=False) 
-parser.add_argument('--input', help='If available, path to the file containing the input data', required=False) # to reduce the data import time when using the same data
-parser.add_argument('--graph', help='In case there is a graph where to get the data from in the endpoint, provide (valid for issa: agrovoc, geonames, wikidata, dbpedia)', required=False)
-parser.add_argument('--lang', help='The language of the labels', required=False) # language of labels 
+parser.add_argument('--endpoint', help='The endpoint from where retrieve the data (identified through codes: issa, covid). Include this information in queries.json if not available.', required=False) 
+parser.add_argument('--input', help='If available, path to the CSV file containing the input data', required=False) # to reduce the data import time when using the same data
+parser.add_argument('--graph', help='In case there is a graph where to get the data from in the endpoint, provide (valid for ISSA: agrovoc, geonames, wikidata, dbpedia)', required=False)
+parser.add_argument('--lang', help='The language of the labels. Default is English (en). Provide the acronym (e.g. en, fr, pt, etc.)', default='en', required=False) # language of labels 
 parser.add_argument('--filename', help='The output file name. If not provided, it will be automatically generated based on the input information.', required=False) 
 parser.add_argument('--conf', help='Minimum confidence of rules. Default is .7, rules with less than x confidence are filtered out.', default=0.7, required=False) 
 parser.add_argument('--int', help='Minimum interestingness (serendipity, rarity) of rules. Default is .3, rules with less than x interestingess are filtered out.', default=0.3, required=False) 
@@ -63,15 +63,7 @@ app = Flask(__name__)
 
 def query() :
     """
-    Query all articles published between two years
-
-    Parameters :
-        year1 : int
-            The oldest year of publication
-        year2 : int
-            The latest year of publication
-        length : int
-            Maximum length of the list containing the DataFrames (for example if we want maximum 50 000 rows, the list has a length of 5)
+    Query the data according to the provided SPARQL query (see queries.json)
 
     Returns :
         df_total : DataFrame
@@ -185,11 +177,6 @@ def clusteringCAH(encoded_data):
 
     groupe[groupe.index.isin(index)].groupby([groupe[groupe.index.isin(index)].index]).count()
 
-    ### Visualisation des labels les plus fréquents dans le groupe 1 ###
-
-    # count = train[train['article'].isin(list(groupe[groupe.index == 1]['article']))]['label'].value_counts()[:20].sort_values(ascending=True)
-    # count.plot(kind='barh').set_title('The 15 most frequent named entities')
-
     # Apply again elbow method to the groups with more than 500 articles #
 
     new_cluster,index_of_cluster = repeat_cluster(encoded_data,groupe,index,500,5)
@@ -240,10 +227,7 @@ def rulesNoClustering(one_hot_matrix):
     return regles
 
 def rulesCommunities(one_hot_label, communities_wt):
-    # drop = [x for x in one_hot.columns if not x.startswith('label_')]
-    # one_hot_community = one_hot.drop(drop,axis=1)
-    # one_hot_community.columns = list(pd.DataFrame(one_hot_community.columns)[0].apply(lambda x : x.split('_')[-1]))
-
+   
     regles_communities_wt = fp_growth_with_community(one_hot_label,communities_wt, 3, float(args.conf))
     print("Communities clustering | Number of rules before filtering = " + str(pd.concat(regles_communities_wt).shape[0]))
     regles_communities_wt = interestingness_measure_community(regles_communities_wt,one_hot_label,communities_wt)
@@ -251,7 +235,6 @@ def rulesCommunities(one_hot_label, communities_wt):
     print("Communities clustering | Number of rules after redundancy filter = " + str(pd.concat(regles_communities_wt).shape[0]))
     regles_wt = create_rules_df_community(regles_communities_wt, float(args.int))
     print("Communities clustering | Number of rules after interestingness filter = " + str(pd.concat(regles_communities_wt).shape[0]))
-    # print("Communities clustering | Number of rules = " + str(pd.concat(regles_communities_wt).shape[0]))
 
     for i in range(len(regles_wt)):
         regles_wt[i]['cluster'] = 'wt' + "_community" + str(i+1)
@@ -327,16 +310,17 @@ def rulesNewCluter(one_hot_label, new_cluster, index_of_cluster):
 
 def listToString(df):
     # transform lists into strings to use in drop_duplicates
+    print(df)
     df['antecedents'] = [','.join(map(str, l)) for l in df['antecedents']]
     df['consequents'] = [','.join(map(str, l)) for l in df['consequents']]
-    df['source'] = [','.join(map(str, l)) for l in df['source']]
-    df['target'] = [','.join(map(str, l)) for l in df['target']]
+    # df['source'] = [','.join(map(str, l)) for l in df['antecedents']]
+    # df['target'] = [','.join(map(str, l)) for l in df['consequents']]
 
 def stringToList(df):
     df['antecedents'] = [ x.split(',') for x in df['antecedents'] ]
     df['consequents'] = [ x.split(',') for x in df['consequents']]
-    df['source'] = [ x.split(',') for x in df['source']]
-    df['target'] = [ x.split(',') for x in df['target']]
+    # df['source'] = [ x.split(',') for x in df['source']]
+    # df['target'] = [ x.split(',') for x in df['target']]
 
 def combineClusterRules(regles_clustering_final, regles_reclustering_final):
     ### REGROUPEMENT DE TOUTES LES REGLES DES CLUSTERS  + SUPPRESSION SI MEME REGLE DANS PLUSIEURS CLUSTERS###
@@ -362,7 +346,6 @@ def combineClusterRules(regles_clustering_final, regles_reclustering_final):
 # Application à Community detection + Clustering (on regroupe article et label)
 def rulesCommunityCluster(one_hot, communities_wt):
     all_rules_clustering_wt =  rules_clustering_communities_autoenconder(one_hot, communities_wt, 20, "cosine", 3, float(args.conf), float(args.int))
-    # all_rules_clustering_wt = remove_identical_rules(all_rules_clustering_wt)
 
     # transform lists into strings to use in drop_duplicates
     listToString(all_rules_clustering_wt)
@@ -378,8 +361,11 @@ def rulesCommunityCluster(one_hot, communities_wt):
     return all_rules_clustering_wt
 
 def fileName(cluster):
-    if (args.filename) :
+    if (args.filename):
         return args.filename + '_' + cluster + '.json'
+
+    if (args.input):
+        return args.input.split('.')[0] + "_" + cluster + ".json" 
 
     graph = "_" + args.graph if  args.graph else ""
     lang = "_" + args.lang if args.lang else ""
@@ -392,20 +378,17 @@ def exportRules(rules_df, cluster):
     if (args.graph):
         rules_df['graph'] = args.graph
 
-    print(rules_df)
     rules_df['source'] = rules_df['antecedents']
     rules_df['target'] = rules_df['consequents']
 
-    # rules_df.to_csv(header=True, index=False, path_or_buf=filename, sep=';', mode = mode)
     rules_df.to_json(path_or_buf=fileName(cluster), orient='records')
     
     
-
 if __name__ == '__main__':
     with app.app_context():
 
         print ('Running algorithm with parameters:')
-        print ('SPARQL endpoint = ' + ('Not informed' if args.endpoint == None else queriesData['endpoints'][args.endpoint] + ' (' + args.endpoint + ')'))
+        print ('SPARQL endpoint = ' + ('None' if args.endpoint == None else queriesData['endpoints'][args.endpoint] + ' (' + args.endpoint + ')'))
         print ('Graph = ' + str(args.graph))
         print ('Language = ' + str(args.lang))
         print ('Minimum confidence = ' + str(args.conf))
@@ -420,9 +403,9 @@ if __name__ == '__main__':
             ## retrieve the data from SPARQL endpoint 
             df_total = query()
 
-        print(df_total.shape[0])
+        print("Input size = " + str(df_total.shape[0]) + " lines")
 
-        ### PREPARATION DES DONNEES : les articles avec un nombre d'entités nommées > 1, on trie par article, entités nommées en minuscule, etc. ###
+        ### DADA PREPARATION : keep articles with at least one label associated, sort articles by alphabetic order, put labels all in lower case, etc. ###
         
         df_article_sort = transform_data(df_total, int(args.occurrence))
 
@@ -439,27 +422,25 @@ if __name__ == '__main__':
         communities_wt = applyWalkTrap(matrix_one_hot)
         rules_communities = rulesCommunities(matrix_one_hot, communities_wt)
 
-        exportRules(rules_no_clustering, 'communities')
+        exportRules(rules_communities, 'communities')
         
         ## generate clusters from labels
         groupe, new_cluster, index, index_of_cluster = clusteringCAH(encoded_data)
         ## generate rules from clusters
         rules_clustering = rulesClustering(matrix_one_hot, groupe, index, new_cluster, index_of_cluster)
-        exportRules(rules_clustering, 'clustering')
 
         ## find sub-clusters, if any, and generate rules from them
         rules_reclustering = rulesNewCluter(matrix_one_hot, new_cluster, index_of_cluster)
-        exportRules(rules_reclustering, 'reclustering')
 
         ## combine all rules generated from clustering and remove duplicates (possible rules find in several clusters), keeping only the most relevant
         rules_clustering_total = combineClusterRules(rules_clustering, rules_reclustering)
         exportRules(rules_clustering_total, 'clustering_final')
 
-        all_rules_clustering_wt = rulesCommunityCluster(matrix_one_hot, communities_wt)
+        # all_rules_clustering_wt = rulesCommunityCluster(matrix_one_hot, communities_wt)
 
-        exportRules(all_rules_clustering_wt, 'communities_clustering')
+        # exportRules(all_rules_clustering_wt, 'communities_clustering')
 
-        all_rules = rules_no_clustering.append(rules_clustering_total).append(rules_communities).append(all_rules_clustering_wt)
+        all_rules = rules_no_clustering.append(rules_clustering_total).append(rules_communities)#.append(all_rules_clustering_wt)
         all_rules.reset_index(inplace=True, drop=True)
         
         print('All rules | Number of rules = ', str(all_rules.shape[0]))
@@ -471,7 +452,7 @@ if __name__ == '__main__':
         exportRules(all_rules, 'all_rules')
         
 
-        filename = 'data/config_' + args.endpoint + '.json'
+        filename = 'data/config_' + str(args.endpoint) + '.json'
         # verify if config file exists before
         if (exists(filename)):
             config = pd.read_json(filename)

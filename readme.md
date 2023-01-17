@@ -1,6 +1,6 @@
 
 ## Installation & Dependencies 
-This script requires Python 3.7, which is a strict requirement for stellargraph (used in the script).
+This script requires Python 3.8, which is a strict requirement for stellargraph (used in the script).
 To install all dependencies `pip install -r requirements.txt`
 
 ## Using the algorithm
@@ -14,7 +14,7 @@ optional arguments:
   -h, --help            show this help message and exit
   
   --endpoint ENDPOINT   The endpoint from where retrieve the data (identified
-                        through codes: issa, covid).
+                        through codes: issa, covid). You can define new queries for different SPARQL endpoints in queries.json.
   
   --input INPUT         If available, path to the file containing the input
                         data

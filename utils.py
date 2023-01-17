@@ -196,7 +196,6 @@ def fp_growth(one_hot, max_len, min_confidence):
 
     """
 # / one_hot.shape[0]
-    print(one_hot.shape[0])
     frequent_itemsets_fp = fpgrowth(one_hot, min_support=5 / one_hot.shape[0], max_len=max_len, use_colnames=True)
     regles_fp = association_rules(frequent_itemsets_fp, metric="confidence", min_threshold=min_confidence).sort_values(
         by='lift', ascending=False)
@@ -427,19 +426,6 @@ def delete_redundant_community(rules_clustering):
         rules_without_redundant.append(rules)
     return rules_without_redundant
 
-
-#Remove identical rules with lower confidence
-def remove_identical_rules(rules) :
-    index = []
-    for x in rules.itertuples() :
-        for y in rules.itertuples() :
-            print(x, y)
-            if((x.Index not in index) and (x.Index != y.Index) and (x.antecedents == y.antecedents) and (x.consequents == y.consequents)) :
-                if(x.confidence >= y.confidence) :
-                    index.append(y.Index)
-                else:
-                    index.append(x.Index)
-    return rules.drop(index)
 
 
 def generate_article_rules(test, rules):
