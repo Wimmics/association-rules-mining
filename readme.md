@@ -51,7 +51,7 @@ Mining association rules from the agrovoc graph of the ISSA dataset:
 
 Mining association rules from the CovidOnTheWeb dataset:
 
-./rules_generator.py --endpoint 'covid' --graph 'agrovoc' --lang 'en' 
+./rules_generator.py --endpoint 'covid' --lang 'en' 
 
 ## License
 
