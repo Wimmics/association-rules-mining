@@ -1,6 +1,6 @@
 
 ## Installation & Dependencies 
-This script requires Python 3.8, which is a strict requirement for stellargraph (used in the script).
+This script requires Python 3.7, which is a strict requirement for stellargraph (used in the script).
 To install all dependencies `pip install -r requirements.txt`
 
 ## Using the algorithm
