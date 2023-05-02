@@ -112,9 +112,11 @@ def query() :
 def fetchData(url):
     try:
         response = urlopen(url)
+        return json.loads(response.read())
     except:
-        response = urlopen(url)
-    return json.loads(response.read())
+        print("Error in ", url)
+        return None
+    
 
 def fetchCroboraData():
     url = datasets[args.endpoint]["labels"]
@@ -129,39 +131,40 @@ def fetchCroboraData():
             data_json += fetchData(u)
 
     data = []
-    categories = ["illustration", "event", "location", "celebrity"]
 
     fetched_urls = []
     if args.append and exists(keysfile): #in case of network issues, it resumes from where it started
-        data = pd.read_csv(keysfile)
-        fetched_urls = list(data["article"])
-        print(fetched_urls)
+        csvfile = pd.read_csv(datafile)
+        # Create a multiline json
+        data = json.loads(csvfile.to_json(orient = "records"))
+
+        urls = pd.read_csv(keysfile)
+        fetched_urls = list(urls["url"])
 
     for value in data_json:
-        params = { 'categories' : value["type"], 'keywords' : value["value"]}
+        category = value["type"]
+        keyword = value["value"]
+
+        params = { 'categories' : category, 'keywords' : keyword}
         params = urllib.parse.urlencode(params) #verifier !
 
         data_url = datasets[args.endpoint]["images"] % (params)
         data_url = data_url.replace(" ", "%20")
-        print("url = ", data_url)
-
+       
         if data_url in fetched_urls:
             continue
 
         #response = urlopen(data_url)
         value_json = fetchData(data_url)
+        if value_json is None:
+            continue
 
         for document in value_json:
             for record in document["records"]:
-                for category in categories:
-                    if record[category] is None:
-                        continue
-
-                    for keyword in record[category]:
-                        data.append({
-                            "article": record["image_title"],
-                            "label": category + "--" + keyword    
-                        })
+                data.append({
+                    "article": record["image_title"],
+                    "label": category + "--" + keyword    
+                })
 
         data_df = pd.DataFrame(data)
         data_df.to_csv(datafile, sep=',', index=False, header=list(data_df.columns), mode='w')
@@ -169,6 +172,8 @@ def fetchCroboraData():
         fetched_urls.append(data_url)
         fetched_df = pd.DataFrame(fetched_urls, columns=["url"])
         fetched_df.to_csv(keysfile, sep=',', index=False, header=list(fetched_df.columns), mode='w')
+
+    return data_df
 
 # Création de la matrice de co-occurences qui est notre jeu de données pour le clustering 
 def getMatrixCooccurrences(df_article_sort):
